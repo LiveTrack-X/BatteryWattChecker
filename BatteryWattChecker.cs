@@ -4,17 +4,23 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.Globalization;
 using System.Management;
+using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
-[assembly: AssemblyTitle("충전 전력")]
-[assembly: AssemblyProduct("충전 전력")]
+[assembly: AssemblyTitle("Battery Watt Checker")]
+[assembly: AssemblyProduct("Battery Watt Checker")]
+[assembly: AssemblyCompany("LiveTrack")]
+[assembly: AssemblyVersion("1.1.0.0")]
+[assembly: AssemblyFileVersion("1.1.0.0")]
 [assembly: AssemblyDescription("배터리 충전 전력을 작업 표시줄에 표시합니다.")]
 
-internal sealed class ChargeWatts : ApplicationContext
+internal sealed class BatteryWattChecker : ApplicationContext
 {
     private readonly NotifyIcon tray = new NotifyIcon();
     private readonly ContextMenuStrip menu = new ContextMenuStrip();
@@ -29,22 +35,44 @@ internal sealed class ChargeWatts : ApplicationContext
     [DllImport("user32.dll")]
     private static extern bool SetProcessDPIAware();
 
-    private ChargeWatts()
+    private BatteryWattChecker()
     {
+        menu.Items.Add("Battery Watt Checker  v" + Updates.Current.ToString(3)).Enabled = false;
+        menu.Items.Add("Created by LiveTrack").Enabled = false;
+        menu.Items.Add(new ToolStripSeparator());
         reading.Enabled = false;
         menu.Items.Add(reading);
         menu.Items.Add(new ToolStripSeparator());
+        var update = new ToolStripMenuItem("업데이트 확인…");
+        menu.Items.Add(update);
+        update.Click += async delegate {
+            update.Enabled = false;
+            try {
+                var release = await Updates.Latest();
+                if (release.Version <= Updates.Current) {
+                    MessageBox.Show("현재 최신 버전입니다.  v" + Updates.Current.ToString(3), "Battery Watt Checker");
+                    return;
+                }
+                if (MessageBox.Show("v" + release.Version.ToString(3) + " 버전을 설치하고 다시 시작할까요?",
+                    "Battery Watt Checker", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+                await Updates.Stage(release);
+                Process.Start(Updates.PendingPath, "--install-update " + Process.GetCurrentProcess().Id);
+                ExitThread();
+            } catch (Exception ex) {
+                MessageBox.Show(ex.Message, "업데이트를 완료하지 못했습니다");
+            } finally { if (!update.IsDisposed) update.Enabled = true; }
+        };
         var startup = new ToolStripMenuItem("로그인할 때 자동 시작");
         menu.Items.Add(startup);
         menu.Opening += delegate {
             startup.Checked = String.Equals(Registry.GetValue(@"HKEY_CURRENT_USER\" + RunKey,
-                "ChargeWatts", null) as string, QuotedPath, StringComparison.OrdinalIgnoreCase);
+                "BatteryWattChecker", null) as string, QuotedPath, StringComparison.OrdinalIgnoreCase);
         };
         startup.Click += delegate {
             try {
                 using (var key = Registry.CurrentUser.CreateSubKey(RunKey)) {
-                    if (startup.Checked) key.DeleteValue("ChargeWatts", false);
-                    else key.SetValue("ChargeWatts", QuotedPath);
+                    if (startup.Checked) key.DeleteValue("BatteryWattChecker", false);
+                    else key.SetValue("BatteryWattChecker", QuotedPath);
                 }
             } catch (Exception ex) { MessageBox.Show(ex.Message, "자동 시작 설정"); }
         };
@@ -135,14 +163,19 @@ internal sealed class ChargeWatts : ApplicationContext
     }
 
     [STAThread]
-    private static void Main()
+    private static void Main(string[] args)
     {
+        if (args.Length == 2 && args[0] == "--install-update") {
+            Updates.Install(args[1]);
+            return;
+        }
+        if (args.Length == 2 && args[0] == "--updated") Updates.Cleanup(args[1]);
         bool first;
-        using (var mutex = new Mutex(true, @"Local\ChargeWattsTray.UX5406", out first)) {
+        using (var mutex = new Mutex(true, @"Local\LiveTrack.BatteryWattChecker", out first)) {
             if (!first) return;
             SetProcessDPIAware();
             Application.EnableVisualStyles();
-            using (var context = new ChargeWatts()) Application.Run(context);
+            using (var context = new BatteryWattChecker()) Application.Run(context);
         }
     }
 }

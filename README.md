@@ -1,12 +1,20 @@
-# ChargeWatts
+# Battery Watt Checker
 
 Windows 작업표시줄 시계 옆에서 **충전 중에는 배터리에 들어가는 전력(W)**을, **배터리로 사용할 때는 노트북이 배터리에서 소모하는 전력(W)**을 볼 수 있습니다. 숫자는 5초마다 갱신됩니다.
 
 ## 다운로드 및 실행
 
-1. [최신 릴리스에서 ChargeWatts.exe 다운로드](https://github.com/LiveTrack-X/ChargeWatts/releases/latest/download/ChargeWatts.exe)
+1. [최신 릴리스에서 BatteryWattChecker.exe 다운로드](https://github.com/LiveTrack-X/BatteryWattChecker/releases/latest/download/BatteryWattChecker.exe)
 2. 파일을 보관할 폴더에 저장하고 실행하세요. 숫자가 보이지 않으면 작업표시줄의 숨겨진 아이콘 메뉴(`^`)에서 시계 옆으로 끌어오세요.
 3. 다음 로그인 때도 표시하려면 아이콘을 우클릭하고 **로그인할 때 자동 시작**을 선택하세요. 같은 메뉴에서 자동 시작을 해제하거나 앱을 종료할 수 있습니다.
+
+## 버전 및 업데이트
+
+작업표시줄 아이콘을 우클릭하면 현재 버전과 **Created by LiveTrack**을 볼 수 있습니다. **업데이트 확인…**을 누르면 GitHub의 최신 정식 릴리스와 버전을 비교합니다. 새 버전의 설치를 선택하면 실행 파일의 SHA-256과 버전을 검증하고 앱을 교체한 뒤 다시 시작합니다. 업데이트하려면 실행 파일을 쓰기 가능한 폴더에 보관하세요.
+
+## 향후 개선 계획
+
+- 배터리 충전·소모 전력(W)을 시간과 함께 기록하고, 나중에 원하는 기간의 기록을 조회하는 기능을 계획하고 있습니다.
 
 ## 숫자 읽는 법
 
@@ -25,5 +33,5 @@ Windows에서 .NET Framework 4.x의 C# 컴파일러를 사용합니다. 저장�
 
 ```powershell
 .\build.ps1
-.\bin\ChargeWatts.exe
+.\bin\BatteryWattChecker.exe
 ```
